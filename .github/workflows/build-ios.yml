@@ -27,23 +27,26 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Fix line endings and grant permissions
+    - name: Fix line endings on text files and grant permissions
       run: |
-        # Strip Windows CRLF line endings from text/script files
+        # Strip Windows CRLF line endings ONLY from text/script files
         find iOSexports -type f \( -name "*.sh" -o -name "*.command" -o -name "*.py" -o -name "*.xcconfig" -o -name "*.pbxproj" -o -name "*.plist" -o -name "*.rsp" -o -name "*.h" -o -name "*.c" -o -name "*.cpp" -o -name "*.mm" \) -exec perl -pi -e 's/\r\n/\n/g' {} +
         
-        # Grant executable permissions across the entire export folder so scripts and tools run cleanly
+        # Grant executable permissions across the exported iOS directory
         chmod -R 777 iOSexports
 
     - name: Pre-build GameAssembly Target (Generates il2cpp.a)
       run: |
+        # Ensure target output path exists
+        mkdir -p build/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/Unity-iPhone/BuildProductsPath/Release-iphoneos
+        
+        # Build GameAssembly target explicitly into the Archive Intermediates directory
         xcodebuild \
           -project iOSexports/Unity-iPhone.xcodeproj \
-          -scheme Unity-iPhone \
           -target GameAssembly \
           -configuration Release \
           -sdk iphoneos \
-          -derivedDataPath build/DerivedData \
+          CONFIGURATION_BUILD_DIR="$(pwd)/build/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/Unity-iPhone/BuildProductsPath/Release-iphoneos" \
           CODE_SIGNING_ALLOWED=NO \
           CODE_SIGNING_REQUIRED=NO
 
