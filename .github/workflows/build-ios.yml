@@ -27,13 +27,13 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Fix line endings and permissions
+    - name: Fix line endings on text files and grant permissions
       run: |
-        # Strip Windows CRLF line endings across all files in iOSexports
-        find iOSexports -type f -exec perl -pi -e 's/\r\n/\n/g' {} +
+        # Strip Windows CRLF line endings ONLY from text/script files (prevents corrupting binary files like .a, .dylib, or tools)
+        find iOSexports -type f \( -name "*.sh" -o -name "*.command" -o -name "*.py" -o -name "*.xcconfig" -o -name "*.pbxproj" -o -name "*.plist" -o -name "*.rsp" -o -name "*.h" -o -name "*.c" -o -name "*.cpp" -o -name "*.mm" \) -exec perl -pi -e 's/\r\n/\n/g' {} +
         
-        # Grant executable permissions across the exported iOS directory
-        chmod -R 777 iOSexports
+        # Grant executable permissions across scripts and binaries
+        chmod -R +x iOSexports
 
     - name: Build GameAssembly Target (Generates il2cpp.a)
       run: |
@@ -42,6 +42,7 @@ jobs:
           -target GameAssembly \
           -configuration Release \
           -sdk iphoneos \
+          -derivedDataPath build/DerivedData \
           CODE_SIGNING_ALLOWED=NO \
           CODE_SIGNING_REQUIRED=NO
 
@@ -53,6 +54,7 @@ jobs:
           -archivePath build/Unity-iPhone.xcarchive \
           -configuration Release \
           -sdk iphoneos \
+          -derivedDataPath build/DerivedData \
           CODE_SIGNING_ALLOWED=NO \
           CODE_SIGNING_REQUIRED=NO
 
