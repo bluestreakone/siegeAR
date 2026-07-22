@@ -13,12 +13,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          lfs: true # Downloads large files tracked by Git LFS (libiPhone-lib.a)
+          lfs: true
 
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+
+      - name: Fix Executable Permissions for Unity Scripts
+        run: |
+          chmod +x iOSexports/*.sh
+          chmod +x iOSexports/usymtool* || true
+          find iOSexports -type f -name "*.sh" -exec chmod +x {} +
 
       - name: Build Xcode Archive (Unsigned)
         run: |
