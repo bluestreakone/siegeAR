@@ -1,0 +1,256 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ arm64-xros-simulator, 
+  arm64-ios-simulator, x86_64-ios-simulator,
+  x86_64-tvos-simulator, arm64-tvos-simulator ]
+install-name:    '@executable_path/Frameworks/UnityFramework.framework/UnityFramework'
+exports:
+  # We have multiple targets to define symbols for specific variation at the end shared one for all variations  
+  # IOS,TVOS,VISIONOS  - DEVICE,SIMULATOR - INTEL,ARM
+
+  # IOS,VISIONOS * *
+  #if PLATFORM_IOS || PLATFORM_VISIONOS
+  - targets: [  
+      arm64-xros-simulator, 
+      arm64-ios-simulator, x86_64-ios-simulator ]
+    symbols: [ 
+      # UI/StoreReview.m
+      _UnityRequestStoreReview,
+
+      # Unity/DisplayManager.mm  
+      # !! TODO ensure SUPPORT_MULTIPLE_DISPLAYS == PLATFORM_IOS || PLATFORM_VISIONOS
+      _UnityDisplayManager_DisplayCount,
+      _UnityDisplayManager_DisplayRenderingResolution,
+      _UnityDisplayManager_PrimaryDisplayIndex,
+      _UnityDisplayManager_DisplayActive,
+      _UnityDisplayManager_DisplayRenderingBuffers,
+      _UnityDisplayManager_SetRenderingResolution,
+      _UnityDisplayManager_DisplaySystemResolution ]
+
+  # TVOS * *
+  #if PLATFORM_TVOS
+  - targets: [  
+      x86_64-tvos-simulator, arm64-tvos-simulator ]
+    symbols: [ 
+      _UnityGetAppleTVRemoteAllowExitToMenu,
+      _UnitySetAppleTVRemoteAllowExitToMenu,
+      _UnityGetAppleTVRemoteAllowRotation,
+      _UnitySetAppleTVRemoteAllowRotation,
+      _UnityGetAppleTVRemoteReportAbsoluteDpadValues,
+      _UnitySetAppleTVRemoteReportAbsoluteDpadValues,
+      _UnityGetAppleTVRemoteTouchesEnabled,
+      _UnitySetAppleTVRemoteTouchesEnabled ]
+
+  # * * *
+  - targets: [  
+      arm64-xros-simulator, 
+      arm64-ios-simulator, x86_64-ios-simulator,
+      x86_64-tvos-simulator, arm64-tvos-simulator ]
+    symbols: [ 
+      _UnityiOSVersionIsAtLeast,
+
+      # iPhone_Sensors.mm 
+      _UnityInitJoysticks,
+      _UnityCoreMotionStart,
+      _UnityCoreMotionStop,
+      _UnityUpdateAccelerometerData,
+      _UnityIsGyroEnabled,
+      _UnityIsGyroAvailable,
+      _UnityUpdateGyroData,
+      _UnitySetGyroUpdateInterval,
+      _UnityGetGyroUpdateInterval,
+      _UnityUpdateJoystickData,
+      _UnityGetJoystickNames,
+      _UnityGetJoystickAxisName,
+      _UnityGetNiceKeyname,
+      _SetCompensatingSensors, 
+      _IsCompensatingSensors,
+      _UnityMaxQueuedAccelerationEvents,
+
+      # UnityAppController.mm
+      _UnityGetGLViewController,
+      _UnityGetUnityView,
+      _UnityGetGLView,
+      _UnityGetMainWindow,
+      _UnityDestroyDisplayLink,
+      _UnityCleanupTrampoline,
+      _UnityEngineDidQuit,
+
+      # UnityAppController+Rendering.mm
+      _UnityGfxInitedCallback,
+      _UnityPresentContextCallback,
+      _UnityFramerateChangeCallback,
+      _UnitySelectRenderingAPI,
+      _UnitySelectedRenderingAPI,
+
+      #_UnityGetMetalBundle,
+      _UnityGetMetalDevice,
+      _UnityGetMetalCommandQueue,
+      _UnityBackbufferColor,
+      _UnityBackbufferDepth,
+      _DisplayManagerEndFrameRendering,
+      _UnityPrepareScreenshot,
+
+      # Unity/MetalHelper.mm
+      _AcquireSwapchainDrawable,
+      _UnityCommandQueueMaxCommandBufferCountMTL,
+
+      # UI/ActivityIndicator.mm
+      _UnityStartActivityIndicator,
+      _UnityStopActivityIndicator,
+
+      # UI/Keyboard.mm
+      _UnityKeyboard_Create,
+      _UnityKeyboard_Show,
+      _UnityKeyboard_Hide,
+      _UnityKeyboard_GetRect,
+      _UnityKeyboard_SetText,
+      _UnityKeyboard_GetText,
+      _UnityKeyboard_IsActive,
+      _UnityKeyboard_Status,
+      _UnityKeyboard_SetInputHidden,
+      _UnityKeyboard_IsInputHidden,
+      _UnityKeyboard_SetCharacterLimit,
+
+      _UnityKeyboard_CanGetSelection,
+      _UnityKeyboard_GetSelection,
+      _UnityKeyboard_CanSetSelection,
+      _UnityKeyboard_SetSelection,
+
+      # UI/UnityViewControllerBase.mm
+      _UnityNotifyHideHomeButtonChange,
+      _UnityNotifyDeferSystemGesturesChange,
+
+      # Unity/AVCapture.mm
+      _UnityGetAVCapturePermission,
+      _UnityRequestAVCapturePermission,
+
+      # Unity/CameraCapture.mm      
+      _UnityEnumVideoCaptureDevices,
+      _UnityInitCameraCapture,
+      _UnityStartCameraCapture,
+      _UnityPauseCameraCapture,
+      _UnityStopCameraCapture,
+      _UnityCameraCaptureExtents,
+      _UnityCameraCaptureReadToMemory,
+      _UnityCameraCaptureVideoRotationDeg,
+      _UnityCameraCaptureVerticallyMirrored,
+      _UnityCameraCaptureSetAutoFocusPoint,
+
+      # Unity/DeviceSettings.mm
+      _UnityDeviceUniqueIdentifier,
+      _UnityVendorIdentifier,
+      _UnityAdIdentifier,
+      _UnityAdTrackingEnabled,
+      _UnityDeviceName,
+      _UnitySystemName,
+      _UnitySystemVersion,
+      _UnityDeviceModel,
+      _UnityDeviceCPUCount,
+      _UnityGetPhysicalMemory,
+      _UnityDeviceGeneration,
+      _ParseDeviceGeneration,
+      _UnityDeviceSupportsUpsideDown,
+      _UnityDeviceSupportedOrientations,
+      _UnityDeviceIsForceTouchSupported,
+      _UnityDeviceIsStylusTouchSupported,
+      _UnityDeviceCanShowWideColor,
+      _UnityDeviceDPI,
+      _UnitySystemLanguage,
+      _UnityGetLowPowerModeEnabled,
+      _UnityGetWantsSoftwareDimming,
+      _UnitySetWantsSoftwareDimming,
+      _UnityGetIosAppOnMac,
+
+      # Unity/DisplayManager.mm
+      _UnityActivateScreenForRendering,
+      _UnityStartFrameRendering,
+      _UnityDestroyUnityRenderSurfaces,
+      _UnityMainScreenRefreshRate,
+      _UnitySetBrightness,
+      _UnityGetBrightness,
+      _UnityIsFullscreen,
+
+      # Unity/Filesystem.mm
+      _UnityDataBundleDir,
+      _UnitySetDataBundleDirWithBundleId,
+      _UnityDocumentsDir,
+      _UnityLibraryDir,
+      _UnityCachesDir,
+      _UnityUpdateNoBackupFlag,
+
+      # iPhoneMisc.mm
+      _UnityFontFallbacks,
+
+      # Unity/UnityWebRequest.mm
+      _UnityWebRequestAddCustomHeader,
+      _UnityCreateWebRequestBackend,
+      _UnitySendWebRequest,
+      _UnityDestroyWebRequestBackend,
+      _UnityCancelWebRequest,
+      _UnityWebRequestCleanupSession,
+      _UnityWebRequestIsDone,
+      _UnityWebRequestClearCookieCache,
+
+      # Unity/FullScreenVideoPlayer.mm
+      _UnityPlayFullScreenVideo,
+      _UnityIsFullScreenPlaying,
+
+      # Unity/OnDemandResources.mm
+      _UnityOnDemandResourcesCreateRequest,
+      _UnityOnDemandResourcesRelease,
+      _UnityOnDemandResourcesGetProgress,
+      _UnityOnDemandResourcesGetLoadingPriority,
+      _UnityOnDemandResourcesSetLoadingPriority,
+      _UnityOnDemandResourcesGetResourcePath,
+
+      # Unity/UnityReplayKit.mm
+      _UnityReplayKitAPIAvailable,
+      _UnityReplayKitRecordingAvailable,
+      _UnityReplayKitLastError,
+      _UnityReplayKitStartRecording,
+      _UnityReplayKitIsRecording,
+      _UnityReplayKitStopRecording,
+      _UnityReplayKitDiscard,
+      _UnityReplayKitPreview,
+      _UnityReplayKitIsPreviewControllerActive,
+
+      _UnityReplayKitBroadcastingAPIAvailable,
+      _UnityReplayKitStartBroadcasting,
+      _UnityReplayKitStopBroadcasting,
+      _UnityReplayKitPauseBroadcasting,
+      _UnityReplayKitResumeBroadcasting,
+      _UnityReplayKitIsBroadcasting,
+      _UnityReplayKitIsBroadcastingPaused,
+      _UnityReplayKitGetBroadcastURL,
+
+      _UnityReplayKitIsCameraEnabled,
+      _UnityReplayKitSetCameraEnabled,
+      _UnityReplayKitIsMicrophoneEnabled,
+      _UnityReplayKitSetMicrophoneEnabled,
+      _UnityReplayKitShowCameraPreviewAt,
+      _UnityReplayKitHideCameraPreview,
+      _UnityReplayKitCreateOverlayWindow,
+
+
+      # misc not in trampoline
+      _Unity_il2cppNoExceptions,
+
+      # TODO LocationService static class members to extern c
+      __ZN15LocationService18SetDesiredAccuracyEf,
+      __ZN15LocationService18GetDesiredAccuracyEv,
+      __ZN15LocationService17SetDistanceFilterEf,
+      __ZN15LocationService17GetDistanceFilterEv,
+      __ZN15LocationService22IsServiceEnabledByUserEv,
+      __ZN15LocationService21StartUpdatingLocationEv,
+      __ZN15LocationService20StopUpdatingLocationEv,
+      __ZN15LocationService24SetHeadingUpdatesEnabledEb,      
+      __ZN15LocationService23IsHeadingUpdatesEnabledEv,
+      __ZN15LocationService17GetLocationStatusEv,
+      __ZN15LocationService16GetHeadingStatusEv,
+      __ZN15LocationService18IsHeadingAvailableEv,
+
+      # CrashReporter.mm
+      _UnityGetExecuteMachHeader ]
+current-version: 1.0
+...
