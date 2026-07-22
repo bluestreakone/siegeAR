@@ -20,11 +20,9 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Fix Executable Permissions for Unity Scripts
+      - name: Fix Executable Permissions for Unity Tools & Scripts
         run: |
-          chmod +x iOSexports/*.sh
-          chmod +x iOSexports/usymtool* || true
-          find iOSexports -type f -name "*.sh" -exec chmod +x {} +
+          chmod -R +x iOSexports
 
       - name: Build Xcode Archive (Unsigned)
         run: |
