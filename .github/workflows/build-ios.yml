@@ -1,59 +1,45 @@
-name: Build iOS IPA
+name: Build iOS App
 
 on:
   push:
-    branches: [ ios-build-exports ]
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
-  build-mac:
+  build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          lfs: true # Downloads large Git LFS binary files (libiPhone-lib.a)
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Set up Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+    - name: Select Xcode Version
+      run: |
+        sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+        xcodebuild -version
 
-      - name: Fix Line Endings and Executable Permissions
-        run: |
-          # Strip Windows carriage returns (\r) from exported scripts & binaries
-          find iOSexports -type f \( -name "*.sh" -o -name "*.command" -o -name "*.py" -o -name "il2cpp*" -o -name "MapFileParser*" \) -exec sed -i '' $'s/\r$//' {} +
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
 
-          # Grant full executable permissions across the iOSexports folder
-          chmod -R +x iOSexports
+    - name: Fix IL2CPP permissions and line endings
+      run: |
+        # Strip Windows CRLF line endings from all scripts and IL2CPP build tools
+        find iOSexports -type f \( -name "*.sh" -o -name "*.command" -o -name "*.py" -o -name "il2cpp*" -o -name "MapFileParser*" \) -exec perl -pi -e 's/\r\n/\n/g' {} +
+        
+        # Grant executable permissions across the exported iOS directory
+        chmod -R +x iOSexports
 
-      - name: Build GameAssembly Target First (Generates il2cpp.a)
-        run: |
-          xcodebuild -project iOSexports/Unity-iPhone.xcodeproj \
-                     -target GameAssembly \
-                     -configuration Release \
-                     -sdk iphoneos
-
-      - name: Build Xcode Archive (Unsigned)
-        run: |
-          xcodebuild archive \
-            -project iOSexports/Unity-iPhone.xcodeproj \
-            -scheme Unity-iPhone \
-            -archivePath build/Unity-iPhone.xcarchive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-
-      - name: Package into IPA
-        run: |
-          mkdir -p build/Payload
-          cp -r build/Unity-iPhone.xcarchive/Products/Applications/Unity-iPhone.app build/Payload/
-          cd build
-          zip -r Unity-iPhone.ipa Payload
-
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Unity-iPhone-IPA
-          path: build/Unity-iPhone.ipa
+    - name: Build Xcode Archive (Unsigned)
+      run: |
+        xcodebuild archive \
+          -project iOSexports/Unity-iPhone.xcodeproj \
+          -scheme Unity-iPhone \
+          -archivePath build/Unity-iPhone.xcarchive \
+          -configuration Release \
+          -sdk iphoneos \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO
