@@ -27,13 +27,23 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Fix IL2CPP permissions and line endings
+    - name: Fix line endings and permissions
       run: |
-        # Strip Windows CRLF line endings from all scripts and IL2CPP build tools
-        find iOSexports -type f \( -name "*.sh" -o -name "*.command" -o -name "*.py" -o -name "il2cpp*" -o -name "MapFileParser*" \) -exec perl -pi -e 's/\r\n/\n/g' {} +
+        # Strip Windows CRLF line endings across all files in iOSexports
+        find iOSexports -type f -exec perl -pi -e 's/\r\n/\n/g' {} +
         
         # Grant executable permissions across the exported iOS directory
-        chmod -R +x iOSexports
+        chmod -R 777 iOSexports
+
+    - name: Build GameAssembly Target (Generates il2cpp.a)
+      run: |
+        xcodebuild \
+          -project iOSexports/Unity-iPhone.xcodeproj \
+          -target GameAssembly \
+          -configuration Release \
+          -sdk iphoneos \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO
 
     - name: Build Xcode Archive (Unsigned)
       run: |
