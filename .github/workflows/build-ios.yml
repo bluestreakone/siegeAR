@@ -13,16 +13,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: true # Downloads large Git LFS binary files (libiPhone-lib.a)
 
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
-      - name: Fix Executable Permissions for Unity Tools & Scripts
+      - name: Fix Line Endings and Executable Permissions
         run: |
+          # Strip Windows carriage returns (\r) from exported scripts & binaries
+          find iOSexports -type f \( -name "*.sh" -o -name "*.command" -o -name "*.py" -o -name "il2cpp*" -o -name "MapFileParser*" \) -exec sed -i '' $'s/\r$//' {} +
+
+          # Grant full executable permissions across the iOSexports folder
           chmod -R +x iOSexports
+
+      - name: Build GameAssembly Target First (Generates il2cpp.a)
+        run: |
+          xcodebuild -project iOSexports/Unity-iPhone.xcodeproj \
+                     -target GameAssembly \
+                     -configuration Release \
+                     -sdk iphoneos
 
       - name: Build Xcode Archive (Unsigned)
         run: |
