@@ -35,27 +35,11 @@ jobs:
         # Grant executable permissions across the exported iOS directory
         chmod -R 777 iOSexports
 
-    - name: Pre-build GameAssembly Target (Generates il2cpp.a)
+    - name: Build Xcode Project (Unsigned)
       run: |
-        # Ensure target output path exists
-        mkdir -p build/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/Unity-iPhone/BuildProductsPath/Release-iphoneos
-        
-        # Build GameAssembly target explicitly into the Archive Intermediates directory
-        xcodebuild \
-          -project iOSexports/Unity-iPhone.xcodeproj \
-          -target GameAssembly \
-          -configuration Release \
-          -sdk iphoneos \
-          CONFIGURATION_BUILD_DIR="$(pwd)/build/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/Unity-iPhone/BuildProductsPath/Release-iphoneos" \
-          CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO
-
-    - name: Build Xcode Archive (Unsigned)
-      run: |
-        xcodebuild archive \
+        xcodebuild build \
           -project iOSexports/Unity-iPhone.xcodeproj \
           -scheme Unity-iPhone \
-          -archivePath build/Unity-iPhone.xcarchive \
           -configuration Release \
           -sdk iphoneos \
           -derivedDataPath build/DerivedData \
@@ -65,7 +49,8 @@ jobs:
     - name: Package into IPA
       run: |
         mkdir -p build/Payload
-        cp -r build/Unity-iPhone.xcarchive/Products/Applications/Unity-iPhone.app build/Payload/
+        # Grab the .app from the standard Build Products directory instead of an xcarchive
+        cp -r build/DerivedData/Build/Products/Release-iphoneos/Unity-iPhone.app build/Payload/
         cd build
         zip -r Unity-iPhone.ipa Payload
 
