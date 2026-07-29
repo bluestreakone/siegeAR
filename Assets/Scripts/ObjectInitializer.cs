@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class ObjectInitializer : MonoBehaviour
 {
@@ -8,6 +9,13 @@ public class ObjectInitializer : MonoBehaviour
 
     private bool previousActivationState = false;
 
+
+    void Start()
+    {
+        // Begin the 10-second auto-init countdown as soon as the scene loads
+        StartCoroutine(TimerRoutine());
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -16,10 +24,18 @@ public class ObjectInitializer : MonoBehaviour
         {
             enableAllBlocks();
             previousActivationState = true;
-        }   
+        }  
 
     }
+    
+    IEnumerator TimerRoutine()
+    {
+        // wait for 10 seconds (works great on mobile without needing the Inspector)
+        yield return new WaitForSeconds(10f);
 
+        // activate the blocks
+        activateBlocks = true;
+    }
     private void enableAllBlocks()
     {
         // finds all rigidbodies in the scene (or can filter by tag/component)
