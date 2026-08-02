@@ -45,3 +45,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   activateBlocks: 0
+  activateCannonball: 0
+  cannonball: {fileID: 0}
+  buildingTimeLimit: 90
