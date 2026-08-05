@@ -12,10 +12,13 @@ public class ObjectManager : MonoBehaviour
     [Tooltip("Assign cannonball GameObject or prefab here.")]
     [SerializeField] private GameObject cannonball;
 
+
+
     public int buildingTimeLimit = 90;
 
     private bool previousBlockActivationState = false;
     private bool previousCannonballActivationState = false;
+    Rigidbody[] allBlocks; //list of blocks in scene
     
 
     void Start()
@@ -35,10 +38,11 @@ public class ObjectManager : MonoBehaviour
             StartCoroutine(BuildingTimerRoutine());
         }
 
-        // if the cannonball is newly activated
+        // if the cannonball is newly activated, activate the cannonball and delete any blocks outside of build area
         if(activateCannonball && !previousCannonballActivationState)
         {
             enableCannonball();
+            destroyInvalidBlocks();
             previousCannonballActivationState = true;
         }
         
@@ -65,7 +69,7 @@ public class ObjectManager : MonoBehaviour
     private void enableAllBlocks()
     {
         // finds all rigidbodies in the scene (or can filter by tag/component)
-        Rigidbody[] allBlocks = FindObjectsOfType<Rigidbody>();
+        allBlocks = FindObjectsOfType<Rigidbody>();
 
         // for every block, enable all core features
         foreach(Rigidbody rb in allBlocks)
@@ -115,6 +119,25 @@ public class ObjectManager : MonoBehaviour
         else
         {
             Debug.LogWarning("Cannonball object reference is missing in the ObjectManager Inspector.");
+        }
+    }
+
+    private void destroyInvalidBlocks()
+    {
+        // for every block, call deletion function if not touching the building area
+        foreach(Rigidbody rb in allBlocks)
+        {
+            if (rb == null) continue;
+
+            // skip the cannonball
+            if (cannonball != null && rb.gameObject == cannonball) continue;
+
+            // call the public method on the block's own script
+            BlockValidator validator = rb.GetComponent<BlockValidator>();
+            if (validator != null)
+            {
+                validator.DestructIfInvalid();
+            }
         }
     }
 }
