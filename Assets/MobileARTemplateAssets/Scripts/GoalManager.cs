@@ -307,7 +307,7 @@ namespace UnityEngine.XR.Templates.AR
 
             m_GreetingPrompt.SetActive(false);
             m_OptionsButton.SetActive(true);
-            m_CreateButton.SetActive(true);
+            //m_CreateButton.SetActive(true);
             m_MenuManager.enabled = true;
 
             for (int i = startingStep; i < m_StepList.Count; i++)

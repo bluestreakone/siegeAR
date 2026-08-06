@@ -106,7 +106,7 @@ public class ObjectManager : MonoBehaviour
             if (col != null) col.enabled = true;
 
             // explicitly tell the cannonball script to fire
-            launchOnActivation cbScript = cannonball.GetComponent<launchOnActivation>();
+            launchAndImpactHandler cbScript = cannonball.GetComponent<launchAndImpactHandler>();
             if (cbScript != null)
             {
                 cbScript.Launch();
