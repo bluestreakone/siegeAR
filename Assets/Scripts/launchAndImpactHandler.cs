@@ -21,6 +21,7 @@ public class launchAndImpactHandler : MonoBehaviour
     private Rigidbody rb;
 
     private bool isTrackingImpacts = false;
+    private bool outcomeHasHappened = false;
 
     void Awake()
     {
@@ -63,6 +64,8 @@ public class launchAndImpactHandler : MonoBehaviour
         isTrackingImpacts = false;
         
         Debug.Log("Cannonball impact tracking window has closed.");
+        if(!outcomeHasHappened);
+            TriggerGameWin();
     }
 
     // triggered when the cannonball physically hits another collider
@@ -85,6 +88,7 @@ public class launchAndImpactHandler : MonoBehaviour
             else
             {
                 Debug.Log($"[Ignored] Cannonball hit castle, but speed was too low ({impactSpeed:F2} m/s).");
+                TriggerGameWin();
             }
         }
     }
@@ -93,11 +97,25 @@ public class launchAndImpactHandler : MonoBehaviour
     {
         // stop tracking so it doesn't trigger multiple times
         isTrackingImpacts = false;
+        outcomeHasHappened = true;
 
         if (manager != null)
         {
             handleGameLoss lossScript = manager.GetComponent<handleGameLoss>();
-            lossScript.handleLoss();
+            lossScript.HandleLoss();
+        }
+    }
+
+    private void TriggerGameWin()
+    {
+        // stop tracking so it doesn't trigger multiple times
+        isTrackingImpacts = false;
+        outcomeHasHappened = true;
+
+        if (manager != null)
+        {
+            handleGameLoss lossScript = manager.GetComponent<handleGameLoss>();
+            lossScript.HandleWin();
         }
     }
     

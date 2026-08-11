@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8337999986943664974}
   - component: {fileID: 7103328050331111948}
+  - component: {fileID: 8803677870564345061}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -47,4 +48,16 @@ MonoBehaviour:
   activateBlocks: 0
   activateCannonball: 0
   cannonball: {fileID: 0}
-  buildingTimeLimit: 90
+  buildingTimeLimit: 60
+--- !u!114 &8803677870564345061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9170593544903774557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 343b96df8791a3a4ca7492c222141fa6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
