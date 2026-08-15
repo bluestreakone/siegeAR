@@ -64,7 +64,7 @@ public class launchAndImpactHandler : MonoBehaviour
         isTrackingImpacts = false;
         
         Debug.Log("Cannonball impact tracking window has closed.");
-        if(!outcomeHasHappened);
+        if(!outcomeHasHappened)
             TriggerGameWin();
     }
 

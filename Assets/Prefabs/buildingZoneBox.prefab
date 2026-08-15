@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7168957317839203377}
   - component: {fileID: 1614072109056404115}
   - component: {fileID: 8188163072959309563}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: buildingZoneBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -75,7 +75,7 @@ GameObject:
   - component: {fileID: 9106996645647264498}
   - component: {fileID: 3518274750006672066}
   - component: {fileID: 8232228167285519977}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: buildingZoneVisualization
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -91,7 +91,7 @@ Transform:
   m_GameObject: {fileID: 2596944398008749184}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: -0.45, z: 0}
+  m_LocalPosition: {x: 0, y: -0.48, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 0.33333334}
   m_ConstrainProportionsScale: 0
   m_Children: []
