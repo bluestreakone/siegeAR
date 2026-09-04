@@ -21,11 +21,31 @@ public class ObjectManager : MonoBehaviour
     Rigidbody[] allBlocks; //list of blocks in scene
     
 
+    public static ObjectManager Instance { get; private set; }
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     void Start()
     {
-        // Begin the 10-second auto-init countdown as soon as the scene loads
+        // activate the modeselection panel
+        ModeSelection.ShowPanel();
+
+    }
+
+    public void OnDurationSelected(int seconds)
+    {
+        Debug.Log($"GameCore received duration: {seconds}s. Starting game now.");
+
+        // set the desired time limit
+        buildingTimeLimit = seconds;
+        
+        // begin blocktimer
         StartCoroutine(BlockTimerRoutine());
     }
+
 
     // Update is called once per frame
     void Update()

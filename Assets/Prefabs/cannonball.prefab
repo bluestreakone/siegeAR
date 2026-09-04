@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dca71f4b316c9574e923e5bcf3aaf207, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  launchForce: 25
+  launchForce: 21
   trackingDuration: 10
   minImpactVelocity: 0.5
   manager: {fileID: 0}
