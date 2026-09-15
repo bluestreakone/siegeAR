@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections;
+using TMPro;
+using System.Drawing;
+using Color = UnityEngine.Color;
 
 public class ObjectManager : MonoBehaviour
 {
@@ -13,13 +16,24 @@ public class ObjectManager : MonoBehaviour
     [SerializeField] private GameObject cannonball;
 
 
-
-    public int buildingTimeLimit = 90;
-
+    
     private bool previousBlockActivationState = false;
     private bool previousCannonballActivationState = false;
     Rigidbody[] allBlocks; //list of blocks in scene
     
+
+    [Header("Timer UI Reference")]
+    [SerializeField] private TMP_Text m_TimerText;
+    [SerializeField] private Color prepTimerColor = Color.gray;
+    [SerializeField] private Color defaultTimerColor = Color.yellow;
+    [SerializeField] private Color warningTimerColor = Color.red;
+
+    private Color currentColor;
+    private float m_RemainingTime;
+    private bool m_IsTimerRunning = false;
+    public int buildingTimeLimit = 90;
+
+    private int selectedTime;
 
     public static ObjectManager Instance { get; private set; }
 
@@ -33,16 +47,69 @@ public class ObjectManager : MonoBehaviour
         // activate the modeselection panel
         ModeSelection.ShowPanel();
 
+        // get the timer text
+        FindTimerText();
+
+        if (m_TimerText != null)
+        {
+            m_TimerText.gameObject.SetActive(false);
+        }
+
+        currentColor = defaultTimerColor;
+    }
+
+    private void FindTimerText()
+    {
+        if (m_TimerText != null) return;
+
+        //find the current clone of gamecore
+        GameObject gameCore = GameObject.Find("GameCore(Clone)");
+        if (gameCore == null)
+        {
+            gameCore = GameObject.Find("GameCore");
+        }
+
+        //once it is found, get the text component that is TimerText
+        if (gameCore != null)
+        {
+            // Search children of GameCore (including cannon and timer text)
+            TMP_Text[] texts = gameCore.GetComponentsInChildren<TMP_Text>(true);
+            foreach (TMP_Text txt in texts)
+            {
+                if (txt.gameObject.name == "TimerText")
+                {
+                    m_TimerText = txt;
+                    Debug.Log("[ObjectManager] Successfully bound m_TimerText to CannonTimerText inside GameCore!");
+                    m_TimerText.color = currentColor;
+                    return;
+                }  
+            }
+        }
+
+        Debug.LogWarning("[ObjectManager] Could not find 'CannonTimerText' inside GameCore(Clone). Check hierarchy naming.");
     }
 
     public void OnDurationSelected(int seconds)
     {
         Debug.Log($"GameCore received duration: {seconds}s. Starting game now.");
 
-        // set the desired time limit
+        FindTimerText();
+
         buildingTimeLimit = seconds;
-        
-        // begin blocktimer
+        selectedTime = seconds;
+
+        // Sync countdown with 10s BlockTimer delay
+        m_RemainingTime = buildingTimeLimit + 10f; 
+        m_IsTimerRunning = true;
+
+        FindTimerText();
+
+        if (m_TimerText != null)
+        {
+            m_TimerText.gameObject.SetActive(true);
+            UpdateTimerDisplay();
+        }
+    
         StartCoroutine(BlockTimerRoutine());
     }
 
@@ -66,6 +133,54 @@ public class ObjectManager : MonoBehaviour
             previousCannonballActivationState = true;
         }
         
+
+        // Timer countdown
+        if (m_IsTimerRunning)
+        {
+            m_RemainingTime -= Time.deltaTime;
+
+            if (m_RemainingTime <= 0f)
+            {
+                m_RemainingTime = 0f;
+                m_IsTimerRunning = false;
+                UpdateTimerDisplay();
+                OnTimerComplete();
+            }
+            else
+            {
+                UpdateTimerDisplay();
+            }
+        }
+    }
+
+    private void UpdateTimerDisplay()
+    {
+        if (m_TimerText == null) return;
+        int totalSeconds = Mathf.CeilToInt(m_RemainingTime);
+        int minutes = Mathf.FloorToInt(totalSeconds / 60f);
+        int seconds = Mathf.FloorToInt(totalSeconds % 60f);
+        m_TimerText.text = $"{minutes:00}:{seconds:00}";
+
+        if(totalSeconds > selectedTime && currentColor != prepTimerColor)
+        {
+            currentColor = prepTimerColor;
+            m_TimerText.color = currentColor;
+        }
+        else if(totalSeconds <= 15 && currentColor != warningTimerColor)
+        {
+            currentColor = warningTimerColor;
+            m_TimerText.color = currentColor;
+        }
+        else if(totalSeconds <= selectedTime && totalSeconds > 15 && currentColor != defaultTimerColor)
+        {
+            currentColor = defaultTimerColor;
+            m_TimerText.color = currentColor;
+        }
+    }
+
+    private void OnTimerComplete()
+    {
+        Debug.Log("Session duration expired!");
     }
     
     IEnumerator BlockTimerRoutine()

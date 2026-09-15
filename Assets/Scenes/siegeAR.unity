@@ -4970,6 +4970,21 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5081158994369586142, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
+      propertyPath: m_text
+      value: 'Select a simulation duration:
+
+        (extra 10s is given for prep
+        phase)'
+      objectReference: {fileID: 0}
+    - target: {fileID: 5081158994369586142, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
+      propertyPath: m_fontSize
+      value: 22
+      objectReference: {fileID: 0}
+    - target: {fileID: 5081158994369586142, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 22
+      objectReference: {fileID: 0}
     - target: {fileID: 5446259650028509864, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

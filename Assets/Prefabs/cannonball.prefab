@@ -155,5 +155,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   launchForce: 21
   trackingDuration: 10
-  minImpactVelocity: 0.5
+  minImpactVelocity: 0.3
   manager: {fileID: 0}
