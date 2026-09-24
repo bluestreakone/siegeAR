@@ -4434,8 +4434,8 @@ MonoBehaviour:
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 800, y: 600}
-  m_ScreenMatchMode: 1
-  m_MatchWidthOrHeight: 0.3
+  m_ScreenMatchMode: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -4922,6 +4922,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: modeSelectionPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 1814752107615307228, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
+      propertyPath: m_text
+      value: 75s
+      objectReference: {fileID: 0}
     - target: {fileID: 1830141439483818481, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -4937,6 +4941,14 @@ PrefabInstance:
     - target: {fileID: 1830141439483818481, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1908710084158044137, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_IntArgument
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 2591459550112102205, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
+      propertyPath: m_Name
+      value: 75sButton
       objectReference: {fileID: 0}
     - target: {fileID: 4098402087154840423, guid: a31c3c27a7caa6f4dbba005a8dfd8e52, type: 3}
       propertyPath: m_Color.a

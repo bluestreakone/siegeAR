@@ -82,7 +82,7 @@ public class launchAndImpactHandler : MonoBehaviour
 
             if (impactSpeed >= minImpactVelocity)
             {
-                //Debug.Log($"[DEFEAT] Cannonball struck castle at high speed: {impactSpeed:F2} m/s");
+                Debug.Log($"[DEFEAT] Cannonball struck castle at high speed: {impactSpeed:F2} m/s");
                 TriggerGameLoss();
             }
             else
