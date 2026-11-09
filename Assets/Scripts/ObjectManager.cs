@@ -1,278 +1,325 @@
-using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 using TMPro;
-using System.Drawing;
-using Color = UnityEngine.Color;
+using Unity.Netcode;
 
-public class ObjectManager : MonoBehaviour
+public class ObjectManager : NetworkBehaviour
 {
-    [Header("OBJECT CONTROLS")]
-    [Tooltip("Check this box to enable all blocks.")]
-    [SerializeField] private bool activateBlocks = false;
-    [SerializeField] private bool activateCannonball = false;
+    public static ObjectManager Instance { get; private set; }
 
-    [Header("CANNONBALL")]
-    [Tooltip("Assign cannonball GameObject or prefab here.")]
-    [SerializeField] private GameObject cannonball;
-
-
-    
-    private bool previousBlockActivationState = false;
-    private bool previousCannonballActivationState = false;
-    Rigidbody[] allBlocks; //list of blocks in scene
-    
-
-    [Header("Timer UI Reference")]
+    [Header("TIMER UI REFERENCE")]
     [SerializeField] private TMP_Text m_TimerText;
+    private GameObject modeSelectionPanel;
     [SerializeField] private Color prepTimerColor = Color.gray;
     [SerializeField] private Color defaultTimerColor = Color.yellow;
     [SerializeField] private Color warningTimerColor = Color.red;
 
-    private Color currentColor;
-    private float m_RemainingTime;
-    private bool m_IsTimerRunning = false;
-    public int buildingTimeLimit = 90;
+    [Header("CANNONBALL & GAME CONTROLS")]
+    [SerializeField] private GameObject cannonball;
 
-    private int selectedTime;
+    public NetworkVariable<float> NetRemainingTime = new NetworkVariable<float>(
+        0f, 
+        NetworkVariableReadPermission.Everyone, 
+        NetworkVariableWritePermission.Server
+    );
 
-    public static ObjectManager Instance { get; private set; }
+    private Dictionary<int, NetworkBlock> blockDict = new Dictionary<int, NetworkBlock>();
+    private Dictionary<int, ulong> blockOwners = new Dictionary<int, ulong>();
+    private const ulong NO_OWNER = ulong.MaxValue;
+
+    private Coroutine activeTimerCoroutine;
+    private float currentBuildingDuration = 60f;
+    private bool prepPhaseCompleted = false;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
     }
 
-    void Start()
+    public void RegisterModeSelectionUI(GameObject panel)
     {
-        // activate the modeselection panel
-        ModeSelection.ShowPanel();
-
-        // get the timer text
-        FindTimerText();
-
-        if (m_TimerText != null)
-        {
-            m_TimerText.gameObject.SetActive(false);
-        }
-
-        currentColor = defaultTimerColor;
+        modeSelectionPanel = panel;
     }
 
-    private void FindTimerText()
+    public override void OnNetworkSpawn()
     {
-        if (m_TimerText != null) return;
-
-        //find the current clone of gamecore
-        GameObject gameCore = GameObject.Find("GameCore(Clone)");
-        if (gameCore == null)
-        {
-            gameCore = GameObject.Find("GameCore");
-        }
-
-        //once it is found, get the text component that is TimerText
-        if (gameCore != null)
-        {
-            // Search children of GameCore (including cannon and timer text)
-            TMP_Text[] texts = gameCore.GetComponentsInChildren<TMP_Text>(true);
-            foreach (TMP_Text txt in texts)
-            {
-                if (txt.gameObject.name == "TimerText")
-                {
-                    m_TimerText = txt;
-                    Debug.Log("[ObjectManager] Successfully bound m_TimerText to CannonTimerText inside GameCore!");
-                    m_TimerText.color = currentColor;
-                    return;
-                }  
-            }
-        }
-
-        Debug.LogWarning("[ObjectManager] Could not find 'CannonTimerText' inside GameCore(Clone). Check hierarchy naming.");
-    }
-
-    public void OnDurationSelected(int seconds)
-    {
-        Debug.Log($"GameCore received duration: {seconds}s. Starting game now.");
-
-        FindTimerText();
-
-        buildingTimeLimit = seconds;
-        selectedTime = seconds;
-
-        // Sync countdown with 10s BlockTimer delay
-        m_RemainingTime = buildingTimeLimit + 10f; 
-        m_IsTimerRunning = true;
-
-        FindTimerText();
-
-        if (m_TimerText != null)
-        {
-            m_TimerText.gameObject.SetActive(true);
-            UpdateTimerDisplay();
-        }
-    
-        StartCoroutine(BlockTimerRoutine());
-    }
-
-
-    // Update is called once per frame
-    void Update()
-    {
-        //if the checkbox for activating blocks is NEWLY pressed
-        if(activateBlocks && !previousBlockActivationState)
-        {
-            enableAllBlocks();
-            previousBlockActivationState = true;
-            StartCoroutine(BuildingTimerRoutine());
-        }
-
-        // if the cannonball is newly activated, activate the cannonball and delete any blocks outside of build area
-        if(activateCannonball && !previousCannonballActivationState)
-        {
-            enableCannonball();
-            destroyInvalidBlocks();
-            previousCannonballActivationState = true;
-        }
+        NetRemainingTime.OnValueChanged += OnTimerValueChanged;
         
-
-        // Timer countdown
-        if (m_IsTimerRunning)
+        // Auto-locate cannonball if assigned in scene
+        if (cannonball == null)
         {
-            m_RemainingTime -= Time.deltaTime;
+            GameObject foundBall = GameObject.FindWithTag("Cannonball") ?? GameObject.Find("cannonball");
+            cannonball = foundBall;
+        }
 
-            if (m_RemainingTime <= 0f)
-            {
-                m_RemainingTime = 0f;
-                m_IsTimerRunning = false;
-                UpdateTimerDisplay();
-                OnTimerComplete();
-            }
-            else
-            {
-                UpdateTimerDisplay();
-            }
+        // CRITICAL FIX: Auto-register all NetworkBlocks instantly on network spawn 
+        // to prevent client-side race conditions where DropBlocksClientRpc fires before Start() completes.
+        NetworkBlock[] existingBlocks = FindObjectsOfType<NetworkBlock>();
+        foreach (var block in existingBlocks)
+        {
+            RegisterBlock(block.BlockId, block);
         }
     }
 
-    private void UpdateTimerDisplay()
+    public override void OnNetworkDespawn()
     {
-        if (m_TimerText == null) return;
-        int totalSeconds = Mathf.CeilToInt(m_RemainingTime);
-        int minutes = Mathf.FloorToInt(totalSeconds / 60f);
-        int seconds = Mathf.FloorToInt(totalSeconds % 60f);
-        m_TimerText.text = $"{minutes:00}:{seconds:00}";
+        NetRemainingTime.OnValueChanged -= OnTimerValueChanged;
+    }
 
-        if(totalSeconds > selectedTime && currentColor != prepTimerColor)
+    public void RegisterTimer(TMP_Text timerTextComp)
+    {
+        m_TimerText = timerTextComp;
+        UpdateTimerUI(NetRemainingTime.Value);
+    }
+
+    public void OnDurationSelected(float duration)
+    {
+        currentBuildingDuration = duration;
+
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
         {
-            currentColor = prepTimerColor;
-            m_TimerText.color = currentColor;
+            StartGameSequence(duration);
+            return;
         }
-        else if(totalSeconds <= 15 && currentColor != warningTimerColor)
+
+        if (IsServer)
         {
-            currentColor = warningTimerColor;
-            m_TimerText.color = currentColor;
-        }
-        else if(totalSeconds <= selectedTime && totalSeconds > 15 && currentColor != defaultTimerColor)
-        {
-            currentColor = defaultTimerColor;
-            m_TimerText.color = currentColor;
-        }
-    }
-
-    private void OnTimerComplete()
-    {
-        Debug.Log("Session duration expired!");
-    }
-    
-    IEnumerator BlockTimerRoutine()
-    {
-        // wait for 10 seconds (works great on mobile without needing the Inspector)
-        yield return new WaitForSeconds(10f);
-
-        // activate the blocks and signal build timer to start
-        activateBlocks = true;
-    }
-
-    IEnumerator BuildingTimerRoutine()
-    {
-        // wait for the designated building time
-        yield return new WaitForSeconds(buildingTimeLimit);
-
-        // activate the cannonball
-        activateCannonball = true;
-    }
-
-    private void enableAllBlocks()
-    {
-        // finds all rigidbodies in the scene (or can filter by tag/component)
-        allBlocks = FindObjectsOfType<Rigidbody>();
-
-        // for every block, enable all core features
-        foreach(Rigidbody rb in allBlocks)
-        {
-            // safety check: skip the cannonball so it doesn't activate early
-            if (cannonball != null && rb.gameObject == cannonball) continue;
-
-            rb.useGravity = true;
-            rb.GetComponent<MeshRenderer>().enabled = true;
-            rb.GetComponent<Collider>().enabled = true;
-            rb.WakeUp();
-        }
-    }
-
-    private void enableCannonball()
-    {
-        if (cannonball != null)
-        {
-            // activate the game object
-            cannonball.SetActive(true);
-
-            // enable physics components if attached
-            Rigidbody rb = cannonball.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.useGravity = true;
-                rb.WakeUp();
-            }
-
-            MeshRenderer mr = cannonball.GetComponent<MeshRenderer>();
-            if (mr != null) mr.enabled = true;
-
-            Collider col = cannonball.GetComponent<Collider>();
-            if (col != null) col.enabled = true;
-
-            // explicitly tell the cannonball script to fire
-            launchAndImpactHandler cbScript = cannonball.GetComponent<launchAndImpactHandler>();
-            if (cbScript != null)
-            {
-                cbScript.Launch();
-            }
-            else
-            {
-                Debug.LogWarning("Cannonball GameObject is missing the Cannonball script component.");
-            }
+            StartGameSequence(duration);
         }
         else
         {
-            Debug.LogWarning("Cannonball object reference is missing in the ObjectManager Inspector.");
+            RequestStartGameServerRpc(duration);
         }
     }
 
-    private void destroyInvalidBlocks()
+    public void ForceSyncBlockTransform(int blockId, Vector3 localPos, Quaternion localRot)
     {
-        // for every block, call deletion function if not touching the building area
-        foreach(Rigidbody rb in allBlocks)
+        if (IsServer)
         {
-            if (rb == null) continue;
+            SyncBlockTransformClientRpc(blockId, localPos, localRot, true);
+        }
+    }
 
-            // skip the cannonball
-            if (cannonball != null && rb.gameObject == cannonball) continue;
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void RequestStartGameServerRpc(float duration)
+    {
+        if (!IsServer) return;
+        StartGameSequence(duration);
+    }
 
-            // call the public method on the block's own script
-            BlockValidator validator = rb.GetComponent<BlockValidator>();
-            if (validator != null)
+    private void StartGameSequence(float duration)
+    {
+        if (activeTimerCoroutine != null)
+        {
+            StopCoroutine(activeTimerCoroutine);
+        }
+
+        prepPhaseCompleted = false;
+        float totalTime = duration + 10f;
+        NetRemainingTime.Value = totalTime;
+
+        HideModeSelectionClientRpc();
+
+        activeTimerCoroutine = StartCoroutine(GameTimerRoutine(duration));
+    }
+
+    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Everyone)]
+    private void HideModeSelectionClientRpc()
+    {
+        if (ModeSelection.Instance != null)
+        {
+            ModeSelection.Instance.gameObject.SetActive(false);
+        }
+        else
+        {
+            GameObject panel = GameObject.Find("modeSelectionPanel");
+            if (panel != null)
             {
-                validator.DestructIfInvalid();
+                panel.SetActive(false);
             }
         }
     }
+
+    private void Update()
+    {
+        if (!IsServer && m_TimerText != null)
+        {
+            UpdateTimerUI(NetRemainingTime.Value);
+        }
+    }
+
+    #region Timer & Game State Coroutine
+
+    private IEnumerator GameTimerRoutine(float buildingDuration)
+    {
+        while (NetRemainingTime.Value > 0f)
+        {
+            yield return new WaitForSeconds(1.0f);
+            NetRemainingTime.Value -= 1.0f;
+
+            if (!prepPhaseCompleted && NetRemainingTime.Value <= buildingDuration)
+            {
+                prepPhaseCompleted = true;
+                OnPrepPhaseComplete();
+            }
+        }
+
+        NetRemainingTime.Value = 0f;
+        OnBuildPhaseComplete();
+    }
+
+    private void OnTimerValueChanged(float previousValue, float newValue)
+    {
+        UpdateTimerUI(newValue);
+    }
+
+    private void UpdateTimerUI(float timeRemaining)
+    {
+        if (m_TimerText == null) return;
+
+        float clampedTime = Mathf.Max(0f, timeRemaining);
+        int totalSeconds = Mathf.FloorToInt(clampedTime);
+        int milliseconds = Mathf.FloorToInt((clampedTime % 1f) * 100f);
+
+        m_TimerText.text = string.Format("{0:00}:{1:00}", totalSeconds, milliseconds);
+
+        if (clampedTime > currentBuildingDuration)
+        {
+            m_TimerText.color = prepTimerColor;
+        }
+        else if (clampedTime > 10f)
+        {
+            m_TimerText.color = defaultTimerColor;
+        }
+        else if (clampedTime > 0f)
+        {
+            m_TimerText.color = warningTimerColor;
+        }
+        else
+        {
+            m_TimerText.color = warningTimerColor;
+            m_TimerText.text = "00:00";
+        }
+    }
+
+    private void OnPrepPhaseComplete()
+    {
+        DropBlocksClientRpc();
+    }
+
+    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Everyone)]
+    private void DropBlocksClientRpc()
+    {
+        foreach (var kvp in blockDict)
+        {
+            if (kvp.Value != null)
+            {
+                kvp.Value.DropToGround();
+            }
+        }
+    }
+
+    private void OnBuildPhaseComplete()
+    {
+        DisableBuildingClientRpc();
+    }
+
+    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Everyone)]
+    private void DisableBuildingClientRpc()
+    {
+        if (cannonball != null)
+        {
+            cannonball.SetActive(true);
+        }
+
+        foreach (var block in blockDict.Values)
+        {
+            if (block != null)
+            {
+                block.DisableBuilding();
+            }
+        }
+    }
+
+    #endregion
+
+    #region Block Registration & Networking
+
+    public void RegisterBlock(int id, NetworkBlock block)
+    {
+        if (!blockDict.ContainsKey(id))
+        {
+            blockDict.Add(id, block);
+            blockOwners.Add(id, NO_OWNER);
+        }
+        else
+        {
+            blockDict[id] = block;
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestBlockOwnershipServerRpc(int blockId, ulong clientId)
+    {
+        if (blockOwners.ContainsKey(blockId))
+        {
+            if (blockOwners[blockId] == NO_OWNER || blockOwners[blockId] == clientId)
+            {
+                blockOwners[blockId] = clientId;
+                GrantOwnershipClientRpc(blockId, clientId);
+            }
+        }
+    }
+
+    [ClientRpc]
+    private void GrantOwnershipClientRpc(int blockId, ulong clientId)
+    {
+        if (blockDict.TryGetValue(blockId, out NetworkBlock block))
+        {
+            bool isLocal = (clientId == NetworkManager.Singleton.LocalClientId);
+            block.SetOwnershipState(isLocal, true);
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ReleaseBlockOwnershipServerRpc(int blockId, ulong clientId, Vector3 velocity, Vector3 angularVelocity)
+    {
+        if (blockOwners.ContainsKey(blockId) && blockOwners[blockId] == clientId)
+        {
+            blockOwners[blockId] = NO_OWNER;
+            ReleaseOwnershipClientRpc(blockId, velocity, angularVelocity);
+        }
+    }
+
+    [ClientRpc]
+    private void ReleaseOwnershipClientRpc(int blockId, Vector3 velocity, Vector3 angularVelocity)
+    {
+        if (blockDict.TryGetValue(blockId, out NetworkBlock block))
+        {
+            block.HandleRemoteRelease(velocity, angularVelocity);
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void SyncBlockTransformServerRpc(int blockId, Vector3 localPos, Quaternion localRot)
+    {
+        SyncBlockTransformClientRpc(blockId, localPos, localRot, false);
+    }
+
+    [ClientRpc]
+    private void SyncBlockTransformClientRpc(int blockId, Vector3 localPos, Quaternion localRot, bool isRestSnapshot)
+    {
+        if (blockDict.TryGetValue(blockId, out NetworkBlock block))
+        {
+            block.UpdateRemoteTransform(localPos, localRot, isRestSnapshot);
+        }
+    }
+
+    #endregion
 }

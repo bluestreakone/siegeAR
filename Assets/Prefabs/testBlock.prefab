@@ -183,6 +183,7 @@ GameObject:
   - component: {fileID: 5825488994344705325}
   - component: {fileID: 6117959454562760797}
   - component: {fileID: 8438076894957151995}
+  - component: {fileID: 8194091113674119634}
   m_Layer: 0
   m_Name: testBlock
   m_TagString: Untagged
@@ -576,3 +577,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6b39d2ae4c48d144903b10e6bd5d9f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+--- !u!114 &8194091113674119634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5209546922259985217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 499a2e2a213411a4dba02c17212b2e7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkBlock
+  blockId: 0
